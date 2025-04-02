@@ -7,8 +7,9 @@ from joblib import Parallel, delayed
 class Haldan_anis:
 
     #-----------------------------------------------------------------------#
-    def __init__(self, L):
+    def __init__(self, L, bond):
         self.L = L 
+        self.bond =bond
     #-----------------------------------------------------------------------#
     def MPO(self, D, E):
 
@@ -107,7 +108,7 @@ class Haldan_anis:
         return P_plus_even, P_plus_odd, P_minus_even, P_minus_odd, P_plus, P_minus
     #-----------------------------------------------------------------------#
     def DMRG(self, d1, e1):
-        dmrg_solver = qtn.tensor_dmrg.DMRG(ham = self.MPO(D = d1, E = e1), bond_dims = 80) 
+        dmrg_solver = qtn.tensor_dmrg.DMRG(ham = self.MPO(D = d1, E = e1), bond_dims = self.bond) 
         dmrg_solver.solve(tol = 1e-3, verbosity = 0);
         ground_state = dmrg_solver.state
         return ground_state
@@ -191,53 +192,7 @@ class Haldan_anis:
 
         return lst_state, lst_target
 
-
-    '''def generate_train_set(self, n_jobs=5):
-        E = np.arange(-2, 2, 0.1)
-        D = np.arange(-2, 2, 0.1)
-        
-        projections = Haldan_anis(L=self.L, ls=self.ls).P()[:4]  # Extract relevant projection operators
-        
-        
-
-
-
-
-
-
-        # Parallel execution over E
-        results = Parallel(n_jobs=n_jobs)(
-            delayed(self.process_point)(d1, e, target, projections)
-            for condition, d1, target in conditions
-            for e in E if condition(e)
-        )
-        
-        # Parallel execution over D
-        results += Parallel(n_jobs=n_jobs)(
-            delayed(self.process_point)(d, e1, target, projections)
-            for condition, d, target in d_conditions
-            for e1 in [2, -2, 0.0] if condition(d)
-        )
-        
-        # Unpack results
-        lst_points, lst_DMRG, lst_target, lst_contract = [], [], [], []
-        
-        for points, state, target, projections in results:
-            lst_points.append(points)
-            lst_DMRG.append(state)
-            lst_target.append(target)
-            for proj_state, proj_target in projections:
-                lst_contract.append((proj_state, proj_target))
-        
-        return (
-            np.array(lst_DMRG),
-            np.array(lst_target),
-            np.array([p[0] for p in lst_contract]),
-            np.array([p[1] for p in lst_contract]),
-            np.array(lst_points),
-        )'''
-
-    
+  
     def generate_test_set(self):
         E = np.arange(-2, 2, 0.1)
         D = np.arange(-2, 2, 0.1)
