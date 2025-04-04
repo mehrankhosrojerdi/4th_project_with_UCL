@@ -175,7 +175,7 @@ class Haldan_anis:
         def compute_dmrg(d, e):
             return self.DMRG(d1=d, e1=e)
 
-        lst_DMRG = Parallel(n_jobs=5, backend = 'threading')(delayed(compute_dmrg)(point[0], point[1]) for point in points)
+        lst_DMRG = Parallel(n_jobs=5, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in points)
 
         return lst_DMRG, targets
 
