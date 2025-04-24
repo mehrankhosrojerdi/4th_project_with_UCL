@@ -2,6 +2,7 @@ import quimb as qu
 import quimb.tensor as qtn
 import numpy as np
 from joblib import Parallel, delayed
+from tqdm import tqdm
 
 
 class Haldan_anis:
@@ -175,7 +176,7 @@ class Haldan_anis:
         def compute_dmrg(d, e):
             return self.DMRG(d1=d, e1=e)
 
-        lst_DMRG = Parallel(n_jobs=5, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in points)
+        lst_DMRG = Parallel(n_jobs=5, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in tqdm(points,desc='Generating train set'))
 
         return lst_DMRG, targets
 
@@ -196,10 +197,11 @@ class Haldan_anis:
     def generate_test_set(self):
         E = np.arange(-2, 2, 0.1)
         D = np.arange(-2, 2, 0.1)
-        
+        all_points = [(d, e) for e in E for d in D]
         def compute_dmrg(d, e):
             return self.DMRG(d1=d, e1=e)
 
-        results = Parallel(n_jobs=5, backend = 'loky')(delayed(compute_dmrg)(d, e) for e in E for d in D)
+        results = Parallel(n_jobs=5, backend = 'loky')(delayed(compute_dmrg)(d, e) for (d, e) in tqdm(all_points,desc='Generating test set' ))
+
         
         return results

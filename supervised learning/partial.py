@@ -57,7 +57,7 @@ class partial:
         test_path = os.path.join(path, 'test_set_DMRG_partial.pkl')
 
         if not os.path.exists(train_path):
-            print('Train dataset not found. Generating it .....')
+            print('Ops! Train dataset not found. Generating it .....')
             train = Haldan_anis(L=self.L, bond=self.bond).points()
             with open(train_path, "wb") as f:
                 pickle.dump(train, f)
@@ -67,7 +67,7 @@ class partial:
         self._train_dataset_path = train_path
 
         if not os.path.exists(test_path):
-            print("Test dataset not found. Generating it...")
+            print("Ops! Test dataset not found. Generating it .....")
             test = Haldan_anis(L=self.L, bond=self.bond).generate_test_set()
             with open(test_path, "wb") as f:
                 pickle.dump(test, f)
@@ -79,7 +79,7 @@ class partial:
         return train, test
 
     def partial_density_matrix(self):
-        print("Computing partial density matrices started ...")
+        print("Computing partial density matrices started .....")
         start_time = time.time()
 
         loaded_test_set = self._load_dataset()[1]
@@ -92,51 +92,59 @@ class partial:
 
         print(f"Tracing over training set ({d2} items)...")
         partial_rhos_train = [Xtr[i].partial_trace_to_mpo( keep=self.keep, rescale_sites=True) for i in tqdm(range(d2), desc = "Tracing train set")]
+        file_path_partial_rhos_train = os.path.join(self.path(), 'partial_rhos_train.pkl')
+        with open(file_path_partial_rhos_train, "wb") as f:
+            pickle.dump(partial_rhos_train, f)
 
         print(f"Tracing over test set ({d1} items)...")    
         partial_rhos_test = [Xte[i].partial_trace_to_mpo(keep=self.keep, rescale_sites=True) for i in tqdm(range(d1), desc="Tracing test set")]
+        file_path_partial_rhos_test = os.path.join(self.path(), 'partial_rhos_test.pkl')
+        with open(file_path_partial_rhos_test, "wb") as f:
+            pickle.dump(partial_rhos_test, f)
 
         print(f"Partial density matrices computed in {time.time() - start_time:.2f} seconds.")
 
         return partial_rhos_train, partial_rhos_test
 
-    '''def _load_partial_density_matrix(self):
+    def _load_partial_density_matrix(self):
         
         path = self.path()
 
-        train_path = os.path.join(path, 'train_set_DMRG_partial.pkl')
-        test_path = os.path.join(path, 'test_set_DMRG_partial.pkl')
+        partial_train_path = os.path.join(path, 'partial_rhos_train.pkl')
+        partial_test_path = os.path.join(path, 'partial_rhos_test.pkl')
 
-        if not os.path.exists(train_path):
-            print('Train dataset not found. Generating it .....')
-            train = Haldan_anis(L=self.L, bond=self.bond).points()
-            with open(train_path, "wb") as f:
-                pickle.dump(train, f)
+        if not os.path.exists(partial_train_path):
+            print('Partian train dataset not found. It is generating .....')
+            partial_train = self.partial_density_matrix()[0]
+            with open(partial_train_path, "wb") as f:
+                pickle.dump(partial_train, f)
         else:
-            with open(train_path, 'rb') as f:
-                train = pickle.load(f)
-        self._train_dataset_path = train_path
+            with open(partial_train_path, 'rb') as f:
+                partial_train = pickle.load(f)
+        self._partial_train_dataset_path = partial_train_path
 
-        if not os.path.exists(test_path):
-            print("Test dataset not found. Generating it...")
-            test = Haldan_anis(L=self.L, bond=self.bond).generate_test_set()
-            with open(test_path, "wb") as f:
-                pickle.dump(test, f)
+        if not os.path.exists(partial_test_path):
+            print("Partial test dataset not found. It is generating .....")
+            partial_test = self.generate_test_set()[1]
+            with open(partial_test_path, "wb") as f:
+                pickle.dump(partial_test, f)
         else:
-            with open(test_path, 'rb') as f:
-                test = pickle.load(f)       
-        self._test_dataset_path = test_path
+            with open(partial_test_path, 'rb') as f:
+                partial_test = pickle.load(f)       
+        self._partial_test_dataset_path = partial_test_path
 
-        return train, test'''
+        return partial_train, partial_test
 
     def gram_train_partial(self):
 
-        print("Computing Gram matrix traix for training set...")
+        print("Computing Gram matrix for training set...")
         start_time = time.time()
-        partial_rho = self.partial_density_matrix()[0]
+
+        partial_rho = self._load_partial_density_matrix()[0]
+
         d = len(partial_rho)
         gram = np.zeros((d, d))
-        for idx in range(d * d):
+        for idx in tqdm(range(d * d), desc='Gram Partial Train'):
             i = idx // d
             j = idx % d
             if j >= i:
@@ -150,14 +158,15 @@ class partial:
 
     def gram_test_partial(self):
 
-        print("Computing Gram matrix traix for testing set...")
+        print("Computing Gram matrix for testing set...")
         start_time = time.time()
-        partial_rhos_train = self.partial_density_matrix()[0]
-        partial_rhos_test = self.partial_density_matrix()[1]
+
+        partial_rhos_train = self._load_partial_density_matrix()[0]
+        partial_rhos_test = self._load_partial_density_matrix()[1]
         d1 = len(partial_rhos_test)
         d2 = len(partial_rhos_train)
         gram_matrix_test = np.zeros((d1,d2))
-        for i in range(d1):
+        for i in tqdm(range(d1), desc='Gram Partial Test'):
             for j in range(d2):
                 gram_matrix_test[i,j] = partial_rhos_test[i] @ partial_rhos_train[j]
         file_path_kernel_test_DMRG = os.path.join(self.path(), "kernel_test_Haldane_DMRG_partial.hdf5")
