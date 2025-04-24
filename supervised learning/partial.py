@@ -91,13 +91,19 @@ class partial:
         d2 = len(Xtr)
 
         print(f"Tracing over training set ({d2} items)...")
-        partial_rhos_train = [Xtr[i].partial_trace_to_mpo( keep=self.keep, rescale_sites=True) for i in tqdm(range(d2), desc = "Tracing train set")]
+        partial_rhos_train = Parallel(n_jobs=-1)(
+            delayed(lambda x: x.partial_trace_to_mpo(keep=self.keep, rescale_sites=True))(Xtr[i])
+            for i in tqdm(range(d2), desc="Tracing train set"))
+        
         file_path_partial_rhos_train = os.path.join(self.path(), 'partial_rhos_train.pkl')
         with open(file_path_partial_rhos_train, "wb") as f:
             pickle.dump(partial_rhos_train, f)
 
         print(f"Tracing over test set ({d1} items)...")    
-        partial_rhos_test = [Xte[i].partial_trace_to_mpo(keep=self.keep, rescale_sites=True) for i in tqdm(range(d1), desc="Tracing test set")]
+        partial_rhos_test = Parallel(n_jobs=-1)(
+            delayed(lambda x: x.partial_trace_to_mpo(keep=self.keep, rescale_sites=True))(Xte[i])
+            for i in tqdm(range(d1), desc="Tracing test set"))        
+        
         file_path_partial_rhos_test = os.path.join(self.path(), 'partial_rhos_test.pkl')
         with open(file_path_partial_rhos_test, "wb") as f:
             pickle.dump(partial_rhos_test, f)
@@ -141,9 +147,9 @@ class partial:
         start_time = time.time()
 
         partial_rho = self._load_partial_density_matrix()[0]
-
         d = len(partial_rho)
         gram = np.zeros((d, d))
+        
         for idx in tqdm(range(d * d), desc='Gram Partial Train'):
             i = idx // d
             j = idx % d
