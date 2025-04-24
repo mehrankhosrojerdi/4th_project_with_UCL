@@ -173,4 +173,4 @@ class partial:
         with h5py.File(file_path_kernel_test_DMRG, "w") as f:
             f.create_dataset("gram_test_DMRG_partial", data = gram_matrix_test)
         print(f"Gram matrix for testing set computed in {time.time() - start_time:.2f} seconds.")
-        return gram_matrix_test
+        return gram_matrix_test   
