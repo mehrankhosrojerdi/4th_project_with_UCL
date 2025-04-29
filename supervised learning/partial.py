@@ -92,7 +92,7 @@ class partial:
 
         print(f"Tracing over training set ({d2} items)...")
         partial_rhos_train = Parallel(n_jobs=-1)(
-            delayed(lambda x: x.partial_trace_to_mpo(keep=self.keep))(Xtr[i])
+            delayed(lambda x: x.partial_trace_to_dense_canonical(where=self.keep))(Xtr[i])
             for i in tqdm(range(d2), desc="Tracing train set"))
         
         '''file_path_partial_rhos_train = os.path.join(self.path(), 'partial_rhos_train.pkl')
@@ -101,7 +101,7 @@ class partial:
 
         print(f"Tracing over test set ({d1} items)...")    
         partial_rhos_test = Parallel(n_jobs=-1)(
-            delayed(lambda x: x.partial_trace_to_mpo(keep=self.keep))(Xte[i])
+            delayed(lambda x: x.partial_trace_to_dense_canonical(where=self.keep))(Xte[i])
             for i in tqdm(range(d1), desc="Tracing test set"))        
         
         '''file_path_partial_rhos_test = os.path.join(self.path(), 'partial_rhos_test.pkl')
@@ -158,7 +158,7 @@ class partial:
             i = idx // d
             j = idx % d
             if j >= i:
-                gram[i, j] = gram[j, i] = partial_rho[i] @ partial_rho[j]
+                gram[i, j] = gram[j, i] = (np.trace(partial_rho[i] @ partial_rho[j]).real)**2
         file_path_kernel_train_DMRG = os.path.join(self.path(),"kernel_train_Haldane_DMRG_partial.hdf5")
         with h5py.File(file_path_kernel_train_DMRG, "w") as f:
             f.create_dataset("gram_train_DMRG_partial", data=gram)
@@ -185,7 +185,7 @@ class partial:
         gram_matrix_test = np.zeros((d1,d2))
         for i in tqdm(range(d1), desc='Gram Partial Test'):
             for j in range(d2):
-                gram_matrix_test[i,j] = partial_rhos_test[i] @ partial_rhos_train[j]
+                gram_matrix_test[i,j] = (np.trace(partial_rhos_test[i] @ partial_rhos_train[j]).real)**2
         file_path_kernel_test_DMRG = os.path.join(self.path(), "kernel_test_Haldane_DMRG_partial.hdf5")
         with h5py.File(file_path_kernel_test_DMRG, "w") as f:
             f.create_dataset("gram_test_DMRG_partial", data = gram_matrix_test)
