@@ -176,7 +176,7 @@ class Haldan_anis:
         def compute_dmrg(d, e):
             return self.DMRG(d1=d, e1=e)
 
-        lst_DMRG = Parallel(n_jobs=-1, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in tqdm(points,desc='Generating train set'))
+        lst_DMRG = Parallel(n_jobs=1, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in tqdm(points,desc='Generating train set'))
 
         return lst_DMRG, targets
 
@@ -201,7 +201,7 @@ class Haldan_anis:
         def compute_dmrg(d, e):
             return self.DMRG(d1=d, e1=e)
 
-        results = Parallel(n_jobs=-1, backend = 'loky')(delayed(compute_dmrg)(d, e) for (d, e) in tqdm(all_points,desc='Generating test set' ))
+        results = Parallel(n_jobs=1, backend = 'loky')(delayed(compute_dmrg)(d, e) for (d, e) in tqdm(all_points,desc='Generating test set' ))
 
         
         return results
