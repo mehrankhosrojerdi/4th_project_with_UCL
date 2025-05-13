@@ -115,60 +115,77 @@ class Haldan_anis:
         return ground_state
     #-----------------------------------------------------------------------#
     def points(self):
-        E = np.arange(-2, 2, 0.1)
-        D = np.arange(-2, 2, 0.1)
+        E = np.arange(-2, 2.1, 0.2)
+        D = np.arange(-2, 2.1, 0.2)
         lst_points = []
         lst_target = []
 
         for e in E:
-            if 0.8 < e < 2.0:
+            lst_points.append([e, -e])
+            if e > 0.5: lst_target.append(1)  # 'large_ex'
+            elif e < -0.1: lst_target.append(4)  # 'x_neel'
+            elif -0.1 <= e <= 0.5: lst_target.append(7)  # 'Haldane'
+        
+        for e in E:
+            lst_points.append([e, e])
+            if e < -0.5: lst_target.append(2)  # 'large_ey'
+            elif e > 0.1: lst_target.append(6)  # 'y_neel'
+            elif -0.5 <= e <= 0.1: lst_target.append(7)  # 'Haldane'
+            
+        for e in E:
+            if 0.8 < e <= 2.0:
                 lst_points.append([-2, e])
                 lst_target.append(1)  # 'large_ex'
             elif -0.8 < e < 0.8:
                 lst_points.append([-2, e])
-                lst_target.append(2)  # 'z_neel'
-            elif -2 < e < -0.8:
+                lst_target.append(3)  # 'z_neel'
+            elif -2 <= e < -0.8:
                 lst_points.append([-2, e])
-                lst_target.append(3)  # 'large_ey'
+                lst_target.append(2)  # 'large_ey'
 
         for e in E:
-            if -2 < e < -0.4:
+            if -2 <= e < -0.4:
                 lst_points.append([2, e])
-                lst_target.append(6)  # 'x_neel'
+                lst_target.append(4)  # 'x_neel'
             elif -0.4 < e < 0.4:
                 lst_points.append([2, e])
                 lst_target.append(5)  # 'large_d'
-            elif 0.4 < e < 2.0:
+            elif 0.4 < e <= 2.0:
                 lst_points.append([2.0, e])
-                lst_target.append(4)  # 'y_neel'
+                lst_target.append(6)  # 'y_neel'
                 
         for d in D:
-            if -2 < d < 0.2:
+            if -2 <= d < 0.2:
                 lst_points.append([d, 2])
                 lst_target.append(1)  # 'large_ex'
-            elif 0.2 < d < 2.0:
+            elif 0.2 < d < 2.1:
                 lst_points.append([d, 2.0])
-                lst_target.append(4)  # 'y_neel'
+                lst_target.append(6)  # 'y_neel'
 
         for d in D:
-            if -2 < d < 0.2:
+            if -2 <= d < 0.2:
                 lst_points.append([d, -2])
-                lst_target.append(3)  # 'large_ey'
-            elif 0.2 < d < 2.0:
+                lst_target.append(2)  # 'large_ey'
+            elif 0.2 < d <= 2.0:
                 lst_points.append([d, -2])
-                lst_target.append(6)  # 'x_neel'
+                lst_target.append(4)  # 'x_neel'
 
-        for d in np.arange(-2, -1, 0.1):  
+        for d in np.arange(-2, -0.3, 0.2):  
             lst_points.append([d, 0.0]) # 'z_neel'
-            lst_target.append(2) 
+            lst_target.append(3) 
 
-        for d in np.arange(1.1, 2, 0.1):
+        for d in np.arange(1.0, 2.1, 0.2):
             lst_points.append([d, 0.0])
             lst_target.append(5)  # 'large_d'
 
-        for d in np.arange(-0.4, 0.6, 0.1):
+        for d in np.arange(-0.4, 0.9, 0.2):
             lst_points.append([d, 0.0])
-            lst_target.append(0) #'Haldane'
+            lst_target.append(7) #'Haldane'
+
+
+        point = np.array(lst_points)
+        targets = np.array(lst_target)
+
         def compute_dmrg(d, e):
             return self.DMRG(d1=d, e1=e)
 
