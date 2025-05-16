@@ -121,26 +121,26 @@ class Haldan_anis:
         lst_target = []
 
         for e in E:
-            if 0.8 < e < 2:
+            if 0.8 < e < 2.0:
                 lst_points.append([-2, e])
                 lst_target.append(1)  # 'large_ex'
             elif -0.8 < e < 0.8:
                 lst_points.append([-2, e])
-                lst_target.append(3)  # 'z_neel'
+                lst_target.append(2)  # 'z_neel'
             elif -2 < e < -0.8:
                 lst_points.append([-2, e])
-                lst_target.append(2)  # 'large_ey'
+                lst_target.append(3)  # 'large_ey'
 
         for e in E:
             if -2 < e < -0.4:
                 lst_points.append([2, e])
-                lst_target.append(4)  # 'x_neel'
+                lst_target.append(6)  # 'x_neel'
             elif -0.4 < e < 0.4:
                 lst_points.append([2, e])
                 lst_target.append(5)  # 'large_d'
             elif 0.4 < e < 2.0:
                 lst_points.append([2.0, e])
-                lst_target.append(6)  # 'y_neel'
+                lst_target.append(4)  # 'y_neel'
                 
         for d in D:
             if -2 < d < 0.2:
@@ -148,37 +148,33 @@ class Haldan_anis:
                 lst_target.append(1)  # 'large_ex'
             elif 0.2 < d < 2.0:
                 lst_points.append([d, 2.0])
-                lst_target.append(6)  # 'y_neel'
+                lst_target.append(4)  # 'y_neel'
 
         for d in D:
             if -2 < d < 0.2:
                 lst_points.append([d, -2])
-                lst_target.append(2)  # 'large_ey'
+                lst_target.append(3)  # 'large_ey'
             elif 0.2 < d < 2.0:
                 lst_points.append([d, -2])
-                lst_target.append(4)  # 'x_neel'
+                lst_target.append(6)  # 'x_neel'
 
-        for d in np.arange(-2, -0.5, 0.1):  
+        for d in np.arange(-2, -1, 0.1):  
             lst_points.append([d, 0.0]) # 'z_neel'
-            lst_target.append(3) 
+            lst_target.append(2) 
 
-        for d in np.arange(0.9, 2, 0.1):
+        for d in np.arange(1.1, 2, 0.1):
             lst_points.append([d, 0.0])
             lst_target.append(5)  # 'large_d'
 
-        for d in np.arange(-0.2, 0.6, 0.1):
+        for d in np.arange(-0.4, 0.6, 0.1):
             lst_points.append([d, 0.0])
-            lst_target.append(7) #'Haldane'
-
-
-        points = np.array(lst_points)
-        targets = np.array(lst_target)
+            lst_target.append(0) #'Haldane'
         def compute_dmrg(d, e):
             return self.DMRG(d1=d, e1=e)
 
-        lst_DMRG = Parallel(n_jobs=1, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in tqdm(points,desc='Generating train set'))
+        lst_DMRG = Parallel(n_jobs=1, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in tqdm(lst_points,desc='Generating train set'))
 
-        return lst_DMRG, targets
+        return lst_DMRG, lst_target
 
     def apply_projection(self):
         P_plus_even, P_plus_odd, P_minus_even, P_minus_odd, _, _ = self.P()
