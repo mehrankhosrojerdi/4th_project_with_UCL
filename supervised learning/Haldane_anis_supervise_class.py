@@ -158,15 +158,15 @@ class Haldan_anis:
                 lst_points.append([d, -2])
                 lst_target.append(6)  # 'x_neel'
 
-        for d in np.arange(-2, -1, 0.1):  
+        for d in np.arange(-2, -0.8, 0.1):  
             lst_points.append([d, 0.0]) # 'z_neel'
             lst_target.append(2) 
 
-        for d in np.arange(1.1, 2, 0.1):
+        for d in np.arange(0.9, 2, 0.1):
             lst_points.append([d, 0.0])
             lst_target.append(5)  # 'large_d'
 
-        for d in np.arange(-0.4, 0.6, 0.1):
+        for d in np.arange(-0.2, 0.6, 0.1):
             lst_points.append([d, 0.0])
             lst_target.append(0) #'Haldane'
         def compute_dmrg(d, e):
