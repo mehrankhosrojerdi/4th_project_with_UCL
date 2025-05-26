@@ -1,6 +1,8 @@
 import quimb as qu
 import quimb.tensor as qtn
+import pandas as pd
 import numpy as np
+import itertools
 import time
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -19,6 +21,29 @@ class TransferLearning:
     def __init__(self, L, bond):
         self.L = L         # number of particle
         self.bond = bond   # bond dimension
+
+    def P(self):
+        I = qu.eye(2).real
+        Z = qu.pauli('Z').real
+        # define the MPO tensor
+        W = np.zeros([2, 2, 2, 2], dtype = float)
+        # allocate different values for each site
+        W[0, 0, :, :] = I
+        W[1, 1, :, :] = Z
+        Wr = np.zeros([2, 2, 2], dtype = float)
+        Wr[0, :, :] = I
+        Wr[1, :, :] = Z
+        Wl = np.zeros([2, 2, 2], dtype = float)
+        Wl[0, :, :] = I
+        Wl[1, :, :] = -Z
+        Wrplus = Wr
+        Wlplus = Wr
+        Wrminus = Wr
+        Wlminus = Wl
+        # build projection
+        P_plus = qtn.MatrixProductOperator([Wlplus] + [W] * (self.L - 2) + [Wrplus])
+        P_minus = qtn.MatrixProductOperator([Wlminus] + [W] * (self.L - 2) + [Wrminus])
+        return P_plus, P_minus
 
     def Haldane_MPO(self, D, E):
         '''
@@ -59,6 +84,58 @@ class TransferLearning:
         MPO_XY = qtn.MPO_ham_XY(self.L, j=((1+gamma),(1-gamma)), bz=bz_value, S=1)
         
         return MPO_XY
+
+    def ANNNI_MPO(self, h, k):
+        '''
+        Constructs the Matrix Product Operator 
+        (MPO) for the ANNNI model.
+        '''
+        I = qu.eye(2).real
+        Z = qu.pauli('Z').real
+        X = qu.pauli('X').real
+
+        W = np.zeros([5, 5, 2, 2], dtype=float)
+
+        W[0, 0, :, :] = I
+        W[0, 1, :, :] = X
+        W[0, 2, :, :] = X
+        W[0, 4, :, :] = -h * Z
+        W[1, 4, :, :] = -X
+        W[2, 3, :, :] = I 
+        W[3, 4, :, :] = k * X
+        W[4, 4, :, :] = I
+
+        Wl = W[0, :, :, :]
+        Wr = W[:, 4, :, :]
+
+        MPO_ANNNI = qtn.MatrixProductOperator([Wl] + [W] * (self.L - 2) + [Wr])
+
+        return MPO_ANNNI
+
+    def Ising_MPO(self, h, j):
+        '''
+        Constructs the Matrix Product Operator 
+        (MPO) for the Ising model.
+        '''
+        I = qu.eye(2).real
+        Z = qu.pauli('Z').real
+        X = qu.pauli('X').real
+
+        W = np.zeros([5, 5, 2, 2], dtype=float)
+
+        W[0, 0, :, :] = I
+        W[0, 1, :, :] = j * X
+        W[0, 4, :, :] = -h * Z
+        W[1, 4, :, :] = -X
+        W[4, 4, :, :] = I
+        
+
+        Wl = W[0, :, :, :]
+        Wr = W[:, 4, :, :]
+
+        MPO_Ising = qtn.MatrixProductOperator([Wl] + [W] * (self.L - 2) + [Wr])
+
+        return MPO_Ising
     
     def dmrg_solver(self, H):
         """
@@ -75,7 +152,7 @@ class TransferLearning:
         ground_state = DMRG.state
         return ground_state
     
-    def generate_trainset(self):
+    def generate_Haldane(self):
         '''
         Generates the training dataset for the 
         Haldane anisotropic model.
@@ -142,8 +219,95 @@ class TransferLearning:
         lst_DMRG = Parallel(n_jobs=-1, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in tqdm(lst_points,desc='Generating train set'))
 
         return lst_DMRG, lst_target
+
+    def generate_ANNNI(self):
+        '''
+        Generates the training dataset for the ANNNI model.
+        
+        Returns:
+            lst_contract: list of normalized projected states (P+ and P- applied)
+            lst_y: corresponding labels
+            lst_kh: list of (k, h) pairs for each projected state
+        '''
+        
+        data_ANNNI = pd.read_csv('dataset_ANNNI.csv')
+        k_vals = data_ANNNI['x'].values
+        h_vals = data_ANNNI['y'].values
+        labels = data_ANNNI['label'].values
+
+        P_plus, P_minus = self.P()
+
+        def process_point(k, h, y):
+            lst_contract_local = []
+            lst_y_local = []
+            lst_kh_local = []
+
+            # Compute DMRG state and energy
+            MPO = self.ANNNI_MPO(k, h)
+            DMRG_state = self.dmrg_solver(H=MPO)
+
+            # Project with P+
+            proj_plus = P_plus.apply(DMRG_state)
+            norm_plus = np.sqrt(np.abs(proj_plus.H @ proj_plus))
+            proj_plus /= norm_plus
+            lst_contract_local.append(proj_plus)
+            lst_y_local.append(y)
+            lst_kh_local.append([k, h])
+
+            # Project with P-
+            proj_minus = P_minus.apply(DMRG_state)
+            norm_minus = np.sqrt(np.abs(proj_minus.H @ proj_minus))
+            if norm_minus > 0.01:
+                proj_minus /= norm_minus
+                lst_contract_local.append(proj_minus)
+                lst_y_local.append(y)
+                lst_kh_local.append([k, h])
+
+            return lst_contract_local, lst_y_local, lst_kh_local, DMRG_state
+
+        # Run in parallel
+        results = Parallel(n_jobs=6, backend='loky')(
+            delayed(process_point)(k, h, y) for k, h, y in tqdm(zip(k_vals, h_vals, labels), desc='Generating ANNNI set')
+        )
+
+        # Collect and flatten results
+        lst_contract = []
+        lst_y = []
+        lst_kh = []
+        lst_DMRG = []
+
+        for contracts, ys, khs, dmrg in results:
+            lst_contract.extend(contracts)
+            lst_y.extend(ys)
+            lst_kh.extend(khs)
+            lst_DMRG.append(dmrg)  # Note: One DMRG per (k,h), not per projected state
+
+        return lst_contract, lst_y, lst_kh, lst_DMRG
     
-    def generate_testset(self):
+    def generate_Ising(self):
+        '''
+        Generates the training dataset for the 
+        Ising model.
+
+        returns:
+            lst_DMRG: list of MPS for the training Ising set
+        '''
+        h = [i for i in np.arange(0, 2, 0.1)]
+        j = [i for i in np.arange(0, 2, 0.1)]
+        points = [list(pair) for pair in itertools.product(h, j)]
+
+        P_plus, _ = self.P()
+
+        def compute_dmrg(h, j):
+            MPO = self.Ising_MPO(h, j)
+            dmrg = self.dmrg_solver(MPO)
+            return P_plus.apply(dmrg)
+
+        lst_DMRG = Parallel(n_jobs=6, backend = 'loky')(delayed(compute_dmrg)(point[0], point[1]) for point in tqdm(points,desc='Generating Ising set'))
+        
+        return lst_DMRG
+    
+    def generate_XY(self):
         '''
         Generates the test dataset for the 
         XY model.
@@ -164,12 +328,12 @@ class TransferLearning:
         
         return lst_DMRG
     
-    def get_kernel_train(self):
+    def get_kernel_train(self, trainset):
         '''
         This function computes the kernel matrix for the training set
 
         parameters:
-            train: list of MPS for the training set
+            trainset: list of MPS for the training set
 
         returns:
             kernel_train: kernel matrix for the training set
@@ -177,7 +341,8 @@ class TransferLearning:
         print("Computing Gram matrix for training set...")
         start_time = time.time()
 
-        psi = self.generate_trainset()[0]
+
+        psi = trainset[0]
 
         d = len(psi)
         gram = np.zeros((d, d))
@@ -191,12 +356,13 @@ class TransferLearning:
         print(f"Gram matrix for training set computed in {time.time() - start_time:.2f} seconds.")
         return gram
     
-    def get_kernel_test(self):
+    def get_kernel_test(self, trainset, testset):
         '''
         This function computes the kernel matrix for the test set
 
         parameters:
-            test: list of MPS for the test and train set
+            trainset: list of MPS for the training set
+            testset: list of MPS for the testing set
 
         returns:
             kernel_test: kernel matrix for the test set
@@ -204,8 +370,8 @@ class TransferLearning:
         print("Computing Gram matrix for test set...")
         start_time = time.time()
 
-        psi_train = self.generate_trainset()[0]
-        psi_test = self.generate_testset()    
+        psi_train = trainset[0]
+        psi_test = testset    
 
         d1 = len(psi_test)
         d2 = len(psi_train)
