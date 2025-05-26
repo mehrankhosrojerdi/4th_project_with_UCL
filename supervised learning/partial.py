@@ -21,7 +21,8 @@ class partial:
         self._test_dataset_path = None
 
     def path(self):
-        path = f"./dataset_L={self.L}_bond={self.bond}_partial"
+        k = self.keep
+        path = f"./dataset_L={self.L}_bond={self.bond}_partial(keeping {len(k)} sites)"
         os.makedirs(path, exist_ok=True)
         return path
 
