@@ -92,7 +92,7 @@ class partial:
         d2 = len(Xtr)
 
         print(f"Tracing over training set ({d2} items)...")
-        partial_rhos_train = Parallel(n_jobs=1)(
+        partial_rhos_train = Parallel(n_jobs=-1)(
             delayed(lambda x: x.partial_trace_to_dense_canonical(where=self.keep))(Xtr[i])
             for i in tqdm(range(d2), desc="Tracing train set"))
         
@@ -101,7 +101,7 @@ class partial:
             pickle.dump(partial_rhos_train, f)'''
 
         print(f"Tracing over test set ({d1} items)...")    
-        partial_rhos_test = Parallel(n_jobs=1)(
+        partial_rhos_test = Parallel(n_jobs=-1)(
             delayed(lambda x: x.partial_trace_to_dense_canonical(where=self.keep))(Xte[i])
             for i in tqdm(range(d1), desc="Tracing test set"))        
         
