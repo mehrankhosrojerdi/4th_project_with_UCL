@@ -33,7 +33,7 @@ class partial:
         start_time = time.time()
         # Generate and save training set
         points = Haldan_anis(L=self.L, bond=self.bond).points()
-        file_path_train_DMRG = os.path.join(self.path(), 'train_set_DMRG.pkl')
+        file_path_train_DMRG = os.path.join(self.path(), f'train_set_DMRG_partial_{len(self.keep)}spins.pkl')
         with open(file_path_train_DMRG, "wb") as f:
             pickle.dump(points, f)
         self._train_dataset_path = file_path_train_DMRG
@@ -42,7 +42,7 @@ class partial:
         start_time = time.time()
         # Generate and save test set
         test = Haldan_anis(L=self.L, bond=self.bond).generate_test_set()
-        file_path_test_DMRG = os.path.join(self.path(), 'test_set_DMRG.pkl')
+        file_path_test_DMRG = os.path.join(self.path(), f'test_set_DMRG_partial_{len(self.keep)}spins.pkl')
         with open(file_path_test_DMRG, "wb") as f:
             pickle.dump(test, f)
         self._test_dataset_path = file_path_test_DMRG
@@ -54,8 +54,8 @@ class partial:
         
         path = self.path()
 
-        train_path = os.path.join(path, 'train_set_DMRG.pkl')
-        test_path = os.path.join(path, 'test_set_DMRG.pkl')
+        train_path = os.path.join(path, f'train_set_DMRG_partial_{len(self.keep)}spins.pkl')
+        test_path = os.path.join(path, f'test_set_DMRG_partial_{len(self.keep)}spins.pkl')
 
         if not os.path.exists(train_path):
             print('Ops! Train dataset not found. Generating it .....')
@@ -160,7 +160,7 @@ class partial:
             j = idx % d
             if j >= i:
                 gram[i, j] = gram[j, i] = (np.trace(partial_rho[i] @ partial_rho[j]).real)**2
-        file_path_kernel_train_DMRG = os.path.join(self.path(),"kernel_train_Haldane_DMRG_partial.hdf5")
+        file_path_kernel_train_DMRG = os.path.join(self.path(), f"kernel_train_Haldane_DMRG_partial_{len(self.keep)}spins.hdf5")
         with h5py.File(file_path_kernel_train_DMRG, "w") as f:
             f.create_dataset("gram_train_DMRG_partial", data=gram)
 
@@ -187,7 +187,7 @@ class partial:
         for i in tqdm(range(d1), desc='Gram Partial Test'):
             for j in range(d2):
                 gram_matrix_test[i,j] = (np.trace(partial_rhos_test[i] @ partial_rhos_train[j]).real)**2
-        file_path_kernel_test_DMRG = os.path.join(self.path(), "kernel_test_Haldane_DMRG_partial.hdf5")
+        file_path_kernel_test_DMRG = os.path.join(self.path(), f"kernel_test_Haldane_DMRG_partial_{len(self.keep)}spins.hdf5")
         with h5py.File(file_path_kernel_test_DMRG, "w") as f:
             f.create_dataset("gram_test_DMRG_partial", data = gram_matrix_test)
         print(f"Gram matrix for testing set computed in {time.time() - start_time:.2f} seconds.")
