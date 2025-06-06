@@ -83,11 +83,21 @@ class partial:
         print("Computing partial density matrices started .....")
         start_time = time.time()
 
-        loaded_test_set = self._load_dataset()[1]
+
+        path = f"./dataset_L={self.L}_bond={self.bond}_partial(keeping 3 sites)"
+
+        file_path_train_DMRG = os.path.join(path, f'train_set_DMRG_partial_3spins.pkl')
+        with open(file_path_train_DMRG, "rb") as f:
+            loaded_dataset = pickle.load(f)
+
+        file_path_test_DMRG = os.path.join(path, f'test_set_DMRG_partial_3spins.pkl')
+        with open(file_path_test_DMRG, "rb") as f:
+            loaded_test_set = pickle.load(f)
+        #loaded_test_set = self._load_dataset()[1]
         Xte = loaded_test_set
         d1 = len(Xte)
 
-        loaded_dataset = self._load_dataset()[0]
+        #loaded_dataset = self._load_dataset()[0]
         Xtr = loaded_dataset[0]
         d2 = len(Xtr)
 

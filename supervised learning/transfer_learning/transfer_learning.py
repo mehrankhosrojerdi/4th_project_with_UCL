@@ -136,6 +136,32 @@ class TransferLearning:
         MPO_Ising = qtn.MatrixProductOperator([Wl] + [W] * (self.L - 2) + [Wr])
 
         return MPO_Ising
+
+    def NNNI_MPO(self, h, k):
+        '''
+        Constructs the Matrix Product Operator 
+        (MPO) for the NNNI model.
+        '''
+        I = qu.eye(2).real
+        Z = qu.pauli('Z').real
+        X = qu.pauli('X').real
+
+        W = np.zeros([5, 5, 2, 2], dtype=float)
+
+        W[0, 0, :, :] = I
+        W[0, 1, :, :] = X
+        W[0, 2, :, :] = X
+        W[1, 4, :, :] = -X
+        W[2, 3, :, :] = I 
+        W[3, 4, :, :] = k * X
+        W[4, 4, :, :] = I
+
+        Wl = W[0, :, :, :]
+        Wr = W[:, 4, :, :]
+
+        MPO_ANNNI = qtn.MatrixProductOperator([Wl] + [W] * (self.L - 2) + [Wr])
+
+        return MPO_ANNNI
     
     def dmrg_solver(self, H):
         """
