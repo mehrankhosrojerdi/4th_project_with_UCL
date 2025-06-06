@@ -84,13 +84,13 @@ class partial:
         start_time = time.time()
 
 
-        path = f"./dataset_L={self.L}_bond={self.bond}_partial(keeping 3 sites)"
+        path = f"./dataset_L=51_bond=50_partial"
 
-        file_path_train_DMRG = os.path.join(path, f'train_set_DMRG_partial_3spins.pkl')
+        file_path_train_DMRG = os.path.join(path, f'train_set_DMRG.pkl')
         with open(file_path_train_DMRG, "rb") as f:
             loaded_dataset = pickle.load(f)
 
-        file_path_test_DMRG = os.path.join(path, f'test_set_DMRG_partial_3spins.pkl')
+        file_path_test_DMRG = os.path.join(path, f'test_set_DMRG.pkl')
         with open(file_path_test_DMRG, "rb") as f:
             loaded_test_set = pickle.load(f)
         #loaded_test_set = self._load_dataset()[1]
