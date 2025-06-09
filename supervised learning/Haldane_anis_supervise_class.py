@@ -1,6 +1,10 @@
 import quimb as qu
 import quimb.tensor as qtn
 import numpy as np
+import time
+import os
+import pickle
+import h5py
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
@@ -8,9 +12,10 @@ from tqdm import tqdm
 class Haldan_anis:
 
     #-----------------------------------------------------------------------#
-    def __init__(self, L, bond):
+    def __init__(self, L, bond, keep):
         self.L = L 
         self.bond =bond
+        self.keep = keep
     #-----------------------------------------------------------------------#
     def MPO(self, D, E):
 
@@ -199,5 +204,49 @@ class Haldan_anis:
 
         results = Parallel(n_jobs=1, backend = 'loky')(delayed(compute_dmrg)(d, e) for (d, e) in tqdm(all_points,desc='Generating test set' ))
 
-        
         return results
+
+    
+    def generate_test_kernel(self):
+        '''
+        Generate a kernel matrix for the test set based on the training set.
+        For the scalable case.
+        '''
+        start_time = time.time()
+
+        path = f"./dataset_L=51_bond=50_partial"
+
+        file_path_train_DMRG = os.path.join(path, f'train_set_DMRG.pkl')
+        with open(file_path_train_DMRG, "rb") as f:
+            loaded_dataset = pickle.load(f)
+        Xtr = loaded_dataset[0]
+        d2 = len(Xtr)
+        partial_rhos_train = Parallel(n_jobs=-1)(
+            delayed(lambda x: x.partial_trace_to_dense_canonical(where=self.keep))(Xtr[i])
+            for i in tqdm(range(d2), desc="Tracing train set"))
+  
+        test_set = self.generate_test_set()
+        d = len(test_set)  # dimension of the local Hilbert space
+        trace_test_set=[]
+        wh = np.arange(0,len(self.keep),1).tolist()
+        for i in range(d):
+            a = test_set[i].partial_trace_to_dense_canonical(where = wh)
+            trace_test_set.append(a)
+
+        d1 = len(trace_test_set)
+        d2 = len(partial_rhos_train)
+        gram_matrix_test = np.zeros((d1,d2))
+        for i in tqdm(range(d1), desc='Gram Test Scalable'):
+            for j in range(d2):
+                gram_matrix_test[i,j] = (
+                    np.trace(trace_test_set[i] @ partial_rhos_train[j]).real)
+
+        path_n = f"./dataset_L=51_bond=50_partial(keeping {len(self.keep)} sites)"
+                
+        file_path_kernel_test_scalable = os.path.join(path_n,"kernel_test_scalable.hdf5")
+        with h5py.File(file_path_kernel_test_scalable, "w") as f:
+            f.create_dataset("gram_test_scalable", data=gram_matrix_test)
+
+        print(f"Kernel test set saved to {file_path_kernel_test_scalable}")
+
+        return gram_matrix_test

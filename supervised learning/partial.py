@@ -22,7 +22,7 @@ class partial:
 
     def path(self):
         k = self.keep
-        path = f"./dataset_L={self.L}_bond={self.bond}_partial(keeping {len(k)} sites)"
+        path = f"./dataset_L=51_bond=50_partial"
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -32,7 +32,7 @@ class partial:
 
         start_time = time.time()
         # Generate and save training set
-        points = Haldan_anis(L=self.L, bond=self.bond).points()
+        points = Haldan_anis(L=self.L, bond=self.bond, keep=self.keep).points()
         file_path_train_DMRG = os.path.join(self.path(), f'train_set_DMRG_partial_{len(self.keep)}spins.pkl')
         with open(file_path_train_DMRG, "wb") as f:
             pickle.dump(points, f)
@@ -41,7 +41,7 @@ class partial:
 
         start_time = time.time()
         # Generate and save test set
-        test = Haldan_anis(L=self.L, bond=self.bond).generate_test_set()
+        test = Haldan_anis(L=self.L, bond=self.bond, keep = self.keep).generate_test_set()
         file_path_test_DMRG = os.path.join(self.path(), f'test_set_DMRG_partial_{len(self.keep)}spins.pkl')
         with open(file_path_test_DMRG, "wb") as f:
             pickle.dump(test, f)
