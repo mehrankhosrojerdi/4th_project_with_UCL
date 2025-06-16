@@ -170,7 +170,7 @@ class partial:
             j = idx % d
             if j >= i:
                 gram[i, j] = gram[j, i] = (np.trace(partial_rho[i] @ partial_rho[j]).real)**2
-        file_path_kernel_train_DMRG = os.path.join(self.path(), f"kernel_train_Haldane_DMRG_partial_{len(self.keep)}spins.hdf5")
+        file_path_kernel_train_DMRG = os.path.join(self.path(), f"kernel_train_Haldane_DMRG_partial_from_{self.keep[0]}_to_{self.keep[-1]}_spins.hdf5")
         with h5py.File(file_path_kernel_train_DMRG, "w") as f:
             f.create_dataset("gram_train_DMRG_partial", data=gram)
 
@@ -197,7 +197,7 @@ class partial:
         for i in tqdm(range(d1), desc='Gram Partial Test'):
             for j in range(d2):
                 gram_matrix_test[i,j] = (np.trace(partial_rhos_test[i] @ partial_rhos_train[j]).real)**2
-        file_path_kernel_test_DMRG = os.path.join(self.path(), f"kernel_test_Haldane_DMRG_partial_{len(self.keep)}spins.hdf5")
+        file_path_kernel_test_DMRG = os.path.join(self.path(), f"kernel_test_Haldane_DMRG_partial_from_{self.keep[0]}_to_{self.keep[-1]}_spins.hdf5")
         with h5py.File(file_path_kernel_test_DMRG, "w") as f:
             f.create_dataset("gram_test_DMRG_partial", data = gram_matrix_test)
         print(f"Gram matrix for testing set computed in {time.time() - start_time:.2f} seconds.")
