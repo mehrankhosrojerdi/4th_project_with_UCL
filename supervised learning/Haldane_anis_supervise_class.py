@@ -252,7 +252,7 @@ class Haldan_anis:
 
         path_n = f"./dataset_L=51_bond=50_partial(keeping {len(self.keep)} sites)"
                 
-        file_path_kernel_test_scalable = os.path.join(path_n,"kernel_test_scalable.hdf5")
+        file_path_kernel_test_scalable = os.path.join(path_n,f"kernel_test_scalable_from_{self.keep[0]}_to_{self.keep[-1]}.hdf5")
         with h5py.File(file_path_kernel_test_scalable, "w") as f:
             f.create_dataset("gram_test_scalable", data=gram_matrix_test)
 
