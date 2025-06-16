@@ -20,12 +20,21 @@ class Haldan_anis:
     def MPO(self, D, E):
 
         J=1
-        I = qu.eye(3).real  
-        Sx = qu.spin_operator('X', S=1).real
-        Sy = qu.spin_operator('Y', S=1)
-        Sz = qu.spin_operator('Z', S=1).real
-        
-        W = np.zeros([5, 5, 3, 3], dtype=complex)
+        #I = qu.eye(3).real  
+        #Sx = qu.spin_operator('X', S=1).real
+        #Sy = qu.spin_operator('Y', S=1)
+        #Sz = qu.spin_operator('Z', S=1).real
+        #W = np.zeros([5, 5, 3, 3], dtype=complex)
+
+        I = qu.eye(4).real  
+        x = qu.spin_operator('X', S=1/2).real
+        Sx = qu.kron(x, qu.eye(2)) + qu.kron(qu.eye(2), x)
+        y = qu.spin_operator('Y', S=1/2)
+        Sy = qu.kron(y, qu.eye(2)) + qu.kron(qu.eye(2), y)
+        z = qu.spin_operator('Z', S=1/2).real
+        Sz = qu.kron(z, qu.eye(2)) + qu.kron(qu.eye(2), z)
+
+        W = np.zeros([5, 5, 4, 4], dtype=complex)
 
         W[0, 0, :, :] = I  
         W[0, 1, :, :] = J * Sx
