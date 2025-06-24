@@ -12,10 +12,9 @@ from tqdm import tqdm
 class Haldan_anis:
 
     #-----------------------------------------------------------------------#
-    def __init__(self, L, bond, keep):
+    def __init__(self, L, bond):
         self.L = L 
         self.bond =bond
-        self.keep = keep
     #-----------------------------------------------------------------------#
     def MPO(self, D, E):
 
@@ -216,11 +215,11 @@ class Haldan_anis:
         return results
 
     
-    def generate_test_kernel(self):
-        '''
+    #-----------------------------------------------------------------------#
+    #formula for scaling when we have 51 particle for train part and len of keep part as a test part
+    '''def generate_test_kernel(self):
         Generate a kernel matrix for the test set based on the training set.
         For the scalable case.
-        '''
         start_time = time.time()
 
         path = f"./dataset_L=51_bond=50_partial"
@@ -258,4 +257,4 @@ class Haldan_anis:
 
         print(f"Kernel test set saved to {file_path_kernel_test_scalable}")
 
-        return gram_matrix_test
+        return gram_matrix_test'''
