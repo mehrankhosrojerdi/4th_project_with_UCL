@@ -86,12 +86,12 @@ class partial:
         print("Computing partial density matrices started .....")
         start_time = time.time()
 
-        path = self.path(keep=keep)
+        #path = self.path(keep=keep)
         path_leonardo = f"./dataset_L=51_bond=50_partial"
 
-        file_path_train_DMRG = os.path.join(path_leonardo, f'train_set_DMRG.pkl')
-        with open(file_path_train_DMRG, "rb") as f:
-            loaded_dataset = pickle.load(f)
+        #file_path_train_DMRG = os.path.join(path_leonardo, f'train_set_DMRG.pkl')
+        #with open(file_path_train_DMRG, "rb") as f:
+        #    loaded_dataset = pickle.load(f)
 
         file_path_test_DMRG = os.path.join(path_leonardo, f'test_set_DMRG.pkl')
         with open(file_path_test_DMRG, "rb") as f:
@@ -101,13 +101,13 @@ class partial:
         d1 = len(Xte)
 
         #loaded_dataset = self._load_dataset()[0]
-        Xtr = loaded_dataset[0]
-        d2 = len(Xtr)
+        #Xtr = loaded_dataset[0]
+        #d2 = len(Xtr)
 
-        print(f"Tracing over training set ({d2} items)...")
-        partial_rhos_train = Parallel(n_jobs=-1)(
-            delayed(lambda x: x.partial_trace_to_dense_canonical(where=keep))(Xtr[i])
-            for i in tqdm(range(d2), desc="Tracing train set"))
+        #print(f"Tracing over training set ({d2} items)...")
+        #partial_rhos_train = Parallel(n_jobs=-1)(
+        #    delayed(lambda x: x.partial_trace_to_dense_canonical(where=keep))(Xtr[i])
+        #    for i in tqdm(range(d2), desc="Tracing train set"))
         
         '''file_path_partial_rhos_train = os.path.join(self.path(), 'partial_rhos_train.pkl')
         with open(file_path_partial_rhos_train, "wb") as f:
@@ -124,7 +124,7 @@ class partial:
 
         print(f"Partial density matrices computed in {time.time() - start_time:.2f} seconds.")
 
-        return partial_rhos_train, partial_rhos_test
+        return partial_rhos_test
 
     '''def _load_partial_density_matrix(self):
         
