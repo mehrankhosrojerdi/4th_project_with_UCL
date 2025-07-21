@@ -8,7 +8,7 @@ import numpy as np
 import quimb as qu
 import quimb.tensor as qtn
 from joblib import Parallel, delayed
-from Haldane_anis_supervise_class import *
+from Haldane_anis_supervise_class_random import *
 
 
 class partial:
