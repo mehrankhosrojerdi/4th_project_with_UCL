@@ -1,133 +1,103 @@
 import quimb as qu
 import quimb.tensor as qtn
 import numpy as np
+import pandas as pd
 
-class ANNNI:
+class HaldaneSpinHalf:
     
     #---------------------------------------------------------------------------------#
-    def __init__(self, L, ls):        
-        self.L = L # number of particle
-        self.ls = ls # the scale of dividing the range of h and k
+    def __init__(self, L, bond): 
+
+        self.L = L # Number of particle
+        self.bond = bond # Bond dimension
+        self.X = qu.pauli('X').real
+        self.Z = qu.pauli('Z').real
+        self.I = qu.eye(2).real
     #---------------------------------------------------------------------------------#
     def MPO(self, h1, h2):
-        I = qu.eye(2).real
-        Z = qu.pauli('Z').real
-        X = qu.pauli('X').real
-        # define the MPO tensor
+
         W = np.zeros([5, 5, 2, 2], dtype = float)
-        # allocate different values to each of the sites
-        W[0, 0, :, :] = I
-        W[0, 1, :, :] = X
-        W[0, 2, :, :] = Z
-        W[0, 4, :, :] = -h1 * X
-        W[1, 4, :, :] = -h2 * X
-        W[2, 3, :, :] = X
-        W[3, 4, :, :] = -Z
-        W[4, 4, :, :] = I
+        W[0, 0, :, :] = self.I
+        W[0, 1, :, :] = self.X
+        W[0, 2, :, :] = self.Z
+        W[0, 4, :, :] = -h1 * self.X
+        W[1, 4, :, :] = -h2 * self.X
+        W[2, 3, :, :] = self.X
+        W[3, 4, :, :] = -self.Z
+        W[4, 4, :, :] = self.I
         Wl = W[0, :, :, :]
         Wr = W[:, 4, :, :]
-        # build the MPO
         H = qtn.MatrixProductOperator([Wl] + [W] * (self.L - 2) + [Wr])
+
         return H
     #---------------------------------------------------------------------------------#
-    def P(self):
-        I = qu.eye(2).real
-        Z = qu.pauli('Z').real
+    def Projection(self):
 
-        # make projection
-        W = np.zeros([2, 2, 2, 2], dtype = float)
-        W[0, 0, :, :] = I
-        W[1, 1, :, :] = Z
-        Wr = np.zeros([2, 2, 2], dtype = float)
-        Wr[0, :, :] = I
-        Wr[1, :, :] = Z
-        Wl = np.zeros([2, 2, 2], dtype = float)
-        Wl[0, :, :] = I
-        Wl[1, :, :] = -Z
-        Wrplus = Wr
-        Wlplus = Wr
-        Wrminus = Wr
-        Wlminus = Wl    
+        '''
+        In this part we are making projection. The structure of code due to 
+        reducing computational cost tune in a way that we can just consider
+        odd number of sites.
+        '''
 
-        # make identity
-        Identity = np.zeros([2, 2, 2, 2], dtype = int)
-        Identity[0, 0, :, :] = I
-        Identity[1, 1, :, :] = I
-        Identity_side = np.zeros([2, 2, 2], dtype = int)
-        Identity_side[0, :, :] = I
-        Identity_side[1, :, :] = I
-        Identity_side_minus = np.zeros([2, 2, 2], dtype = int)
-        Identity_side_minus[0, :, :] = I
-        Identity_side_minus[1, :, :] = -I
-    
+        def make_projection(kind = 'W', sign = 1, side = False):
 
-        # build projection odd and even
+            if kind == 'W':
+                base = self.Z
+                dtype = float
+            elif kind == 'I':
+                base = self.I
+                dtype = int
+            else:
+                raise ValueError('Invalid kind, use either "W" or "I"')
+
+            if side: 
+                tensor = np.zeros([2, 2, 2], dtype = dtype)
+                tensor[0] = self.I
+                tensor[1] = sign * base
+
+            else:
+                tensor = np.zeros([2, 2, 2, 2], dtype = dtype)
+                tensor[0, 0] = self.I
+                tensor[1, 1] = sign * base
+
+            return tensor
+
+        W = make_projection('W')
+        Wr = make_projection('W', side=True)
+        Wl = make_projection('W', sign=-1, side=True)
+
+        Identity = make_projection('I')
+        Identity_side_plus = make_projection('I', side=True)
+        Identity_side_minus = make_projection('I', sign=-1, side=True)
         
-        #if int(self.L) % 2 != 0:
-
         even_form = [Identity]+[W]
         even_repeat = sum([even_form for i in range(int((self.L-3)/2))],[])
 
         odd_form = [W]+[Identity]
         odd_repeat = sum([odd_form for i in range(int((self.L-3)/2))],[])
 
-        P_plus_even = qtn.MatrixProductOperator([Wlplus] +  even_repeat + [Identity] + [Wrplus])
-        P_plus_odd = qtn.MatrixProductOperator([Identity_side] + odd_repeat + [W] + [Identity_side])
-        P_minus_even = qtn.MatrixProductOperator([Wlminus] + even_repeat+ [Identity] + [Wrminus])
-        P_minus_odd = qtn.MatrixProductOperator([Identity_side_minus] + odd_repeat + [W] + [Identity_side])
+        P_plus_even = qtn.MatrixProductOperator([Wr] +  even_repeat + [Identity] + [Wr])
+        P_plus_odd = qtn.MatrixProductOperator([Identity_side_plus] + odd_repeat + [W] + [Identity_side_plus])
+        P_minus_even = qtn.MatrixProductOperator([Wl] + even_repeat+ [Identity] + [Wr])
+        P_minus_odd = qtn.MatrixProductOperator([Identity_side_minus] + odd_repeat + [W] + [Identity_side_plus])
 
-        #elif int(self.L) % 2 == 0:
-
-            #even_form = [Identity]+[W]
-            #even_repeat = sum([even_form for i in range(int((self.L-2)/2))],[])
-
-            #odd_form = [W]+[Identity]
-            #odd_repeat = sum([odd_form for i in range(int((self.L-2)/2))],[])
-
-            #P_plus_even = qtn.MatrixProductOperator([Wlplus] +  even_repeat + [Identity_side])
-            #P_plus_odd = qtn.MatrixProductOperator([Identity_side] + odd_repeat +  [Wrplus])
-            #P_minus_even = qtn.MatrixProductOperator([Wlminus] + even_repeat+  [Identity_side] )
-            #P_minus_odd = qtn.MatrixProductOperator([Identity_side_minus] + odd_repeat + [Wrminus])
-
-        # build projection
-        P_plus = qtn.MatrixProductOperator([Wlplus] + [W] * (self.L - 2) + [Wrplus])
-        P_minus = qtn.MatrixProductOperator([Wlminus] + [W] * (self.L - 2) + [Wrminus])
-
-        return P_plus_even, P_plus_odd, P_minus_even, P_minus_odd, P_plus, P_minus
+        return P_plus_even, P_plus_odd, P_minus_even, P_minus_odd
     #---------------------------------------------------------------------------------#
     def DMRG(self, h1, h2):
-        DMRG = qtn.tensor_dmrg.DMRG(ham = ANNNI(L = self.L, ls = self.ls).MPO(h1 = h1, h2 = h2), bond_dims = 150) 
-        DMRG.solve(tol = 1e-3, verbosity = 0);
+        DMRG = qtn.tensor_dmrg.DMRG(ham = self.MPO(h1 = h1, h2 = h2), bond_dims = self.bond) 
+        DMRG.solve(tol = 1e-3, verbosity = 0)
         ground_state = DMRG.state
-        energy = DMRG.energy
-        return ground_state, energy
+        return ground_state
     #---------------------------------------------------------------------------------#
-    def generate_train_set(self):
-        # Generate the dataset for the specified constant h1
-        h1 = 1
-        h2_value = np.linspace(-1.6, 1.6, int(self.ls))
-        lst = []
-        for h2v in h2_value:
-            lst.append(h1)
-            lst.append(h2v)
+    def generate_train_set_regular(self):
 
-        # Generate final dataset which is based on (k, h) format
-        result = np.array(lst).reshape(int(len(lst)/2), 2)
+        P_plus_even, P_plus_odd, P_minus_even, P_minus_odd = self.Projection()
 
-        # make projections
-        P_plus_even, P_plus_odd, P_minus_even, P_minus_odd, P_plus, P_minus = ANNNI(L = self.L, ls = self.ls).P()
-        
-        lst_contract = []
-        lst_target_projection = []
+        train_points = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/regular_train_set.csv')
+       
+        lst_target = []
 
-        #lst_contract_1 = []
-        #lst_target_projection_1 = []
-
-        lst_h1h2 = []
-        lst_DMRG_state = []
-        lst_target_DMRG = []
-
-        for element in result:
+        for element in:
             h1 = element[0]
             h2 = element[1]
 
