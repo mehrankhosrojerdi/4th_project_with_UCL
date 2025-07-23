@@ -89,83 +89,63 @@ class HaldaneSpinHalf:
         ground_state = DMRG.state
         return ground_state
     #---------------------------------------------------------------------------------#
-    def generate_train_set_regular(self):
+    def generate_train_set(self, kind = 'random_points'):
 
         P_plus_even, P_plus_odd, P_minus_even, P_minus_odd = self.Projection()
 
-        train_points = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/regular_train_set.csv')
-       
-        lst_target = []
+        if kind == 'random_points':
+            base = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/random_train_set.csv')
 
-        for element in:
-            h1 = element[0]
-            h2 = element[1]
+        elif kind == 'regular_points':
+            base = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/regular_train_set.csv')
 
-            # the target part
-            if h2 < -1.15:
-                y = -1 # Antiferromagnetic
-            elif h2 > 0:
-                y = 1 # Paramagnetic   
-            else:
-                y = 0 # SPT
-          		
-            lst_h1h2.append(h1)
-            lst_h1h2.append(h2)
+        else:
+            raise ValueError('Invalid kind, use either "random_points" or "regular_points"')
 
-            # the feature part
-            DMRG_state, DMRG_energy = ANNNI(L = self.L, ls = self.ls).DMRG(h1 = h1, h2 = h2); # make DMRG state for these specific value of h and k
-            lst_DMRG_state.append(DMRG_state) # DMRG states
-            lst_target_DMRG.append(y)
+        lst_project_state = []
+        lst_project_target = []
+
+        for i in range(len(base)):
+            
+            h1 = base['h1']
+            h2 = base['h2']
+            target = base['target']
+
+            DMRG_state = self.DMRG(h1 = h1[i], h2 = h2[i])
 
             contraction_state_plus_even = P_plus_even.apply(DMRG_state); # projection state after P plus even projection
             normalisation_factor_plus_even = np.sqrt(np.abs(contraction_state_plus_even.H @ contraction_state_plus_even))
             if normalisation_factor_plus_even > 0.01:
                 contraction_state_plus_even = contraction_state_plus_even/normalisation_factor_plus_even
-                lst_contract.append(contraction_state_plus_even)
-                lst_target_projection.append(y)
+                lst_project_state.append(contraction_state_plus_even)
+                lst_project_target.append(target[i])
 
             contraction_state_plus_odd = P_plus_odd.apply(DMRG_state); # projection state after P plus odd projection
             normalisation_factor_plus_odd = np.sqrt(np.abs(contraction_state_plus_odd.H @ contraction_state_plus_odd))
             if normalisation_factor_plus_odd > 0.01:
                 contraction_state_plus_odd = contraction_state_plus_odd/normalisation_factor_plus_odd
-                lst_contract.append(contraction_state_plus_odd)
-                lst_target_projection.append(y)
+                lst_project_state.append(contraction_state_plus_odd)
+                lst_project_target.append(target[i])
 
             contraction_state_minus_even = P_minus_even.apply(DMRG_state); # projection state after P minus even projection
             normalisation_factor_minus_even = np.sqrt(np.abs(contraction_state_minus_even.H @ contraction_state_minus_even))
             if normalisation_factor_minus_even > 0.01:
                 contraction_state_minus_even = contraction_state_minus_even/normalisation_factor_minus_even
-                lst_contract.append(contraction_state_minus_even)
-                lst_target_projection.append(y)
+                lst_project_state.append(contraction_state_minus_even)
+                lst_project_target.append(target[i])
 
             contraction_state_minus_odd = P_minus_odd.apply(DMRG_state); # projection state after P minus odd projection
             normalisation_factor_minus_odd = np.sqrt(np.abs(contraction_state_minus_odd.H @ contraction_state_minus_odd))
             if normalisation_factor_minus_odd > 0.01:
                 contraction_state_minus_odd = contraction_state_minus_odd/normalisation_factor_minus_odd
-                lst_contract.append(contraction_state_minus_odd)
-                lst_target_projection.append(y)
+                lst_project_state.append(contraction_state_minus_odd)
+                lst_project_target.append(target[i])
 
-            #contraction_state_plus = P_plus.apply(DMRG_state); # projection state after P minus projection
-            #normalisation_factor_plus = np.sqrt(np.abs(contraction_state_plus.H @ contraction_state_plus))
-            #if normalisation_factor_plus > 0.01:
-            #    contraction_state_plus = contraction_state_plus/normalisation_factor_plus
-            #    lst_contract_1.append(contraction_state_plus)
-            #    lst_target_projection_1.append(y)
 
-            #contraction_state_minus = P_minus.apply(DMRG_state); # projection state after P minus projection
-            #normalisation_factor_minus = np.sqrt(np.abs(contraction_state_minus.H @ contraction_state_minus))
-            #if normalisation_factor_minus > 0.01:
-            #    lst_target_projection_1.append(y)
+        states = np.array(lst_project_state)
+        targets = np.array(lst_project_target)
 
-        DMRG_state = np.array(lst_DMRG_state)
-        DMRG_target = np.array(lst_target_DMRG)
-        project_state = np.array(lst_contract)
-        projection_target = np.array(lst_target_projection)
-        #project_state_1 = np.array(lst_contract_1)
-        #projection_target_1 = np.array(lst_target_projection_1)
-        h1h2 = np.array(lst_h1h2)
-
-        return DMRG_state, DMRG_target, project_state, projection_target, h1h2
+        return states, targets
     
 
     def generate_test_set(self):
