@@ -2,6 +2,10 @@ import quimb as qu
 import quimb.tensor as qtn
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
+from joblib import Parallel, delayed
+import os
+os.environ["NUMBA_NUM_THREADS"] = "1"
 
 class HaldaneSpinHalf:
     
@@ -105,7 +109,7 @@ class HaldaneSpinHalf:
         lst_project_state = []
         lst_project_target = []
 
-        for i in range(len(base)):
+        for i in tqdm(range(len(base)),desc=f'Generating train set for {kind}'):
             
             h1 = base['h1']
             h2 = base['h2']
@@ -141,7 +145,6 @@ class HaldaneSpinHalf:
                 lst_project_state.append(contraction_state_minus_odd)
                 lst_project_target.append(target[i])
 
-
         states = np.array(lst_project_state)
         targets = np.array(lst_project_target)
 
@@ -149,33 +152,14 @@ class HaldaneSpinHalf:
     
 
     def generate_test_set(self):
-        # Generate the dataset for the specified constant h1
-        h1_value = np.linspace((1e-5), 1.6, int(self.ls))
-        h2_value = np.linspace(-1.6, 1.6, int(self.ls))
-        lst = []
-        for h1v in h1_value:
-            for h2v in h2_value:
-                lst.append(h1v)
-                lst.append(h2v)
 
-        # Generate final dataset which is based on (k, h) format
-        result = np.array(lst).reshape(int(len(lst)/2), 2)
+        test_points = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/test_set.csv')
+        h1 = test_points['h1']
+        h2 = test_points['h2']
 
-        lst_h1h2 = []
-        lst_DMRG_state = []
-        for element in result:
-            h1 = element[0]
-            h2 = element[1]
-
-            lst_h1h2.append(h1)
-            lst_h1h2.append(h2)
-
-             # the feature part
-            DMRG_state, DMRG_energy = ANNNI(L = self.L, ls = self.ls).DMRG(h1 = h1, h2 = h2); # make DMRG state for these specific value of h and k
-            lst_DMRG_state.append(DMRG_state) # DMRG states
-
-
-        DMRG_state = np.array(lst_DMRG_state)
-        h1h2 = np.array(lst_h1h2)
-
-        return DMRG_state, h1h2
+        def compute_dmrg(i):
+            return self.DMRG(h1 = h1[i], h2 = h2[i])
+        
+        results = Parallel(n_jobs=-1)(delayed(compute_dmrg)(i) for i  in tqdm(range(len(test_points)),desc = 'Generating test set'))
+    
+        return np.array(results)
