@@ -98,10 +98,10 @@ class HaldaneSpinHalf:
         P_plus_even, P_plus_odd, P_minus_even, P_minus_odd = self.Projection()
 
         if kind == 'random_points':
-            base = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/random_train_set.csv')
+            base = pd.read_csv('./dataset/random_train_set.csv')
 
         elif kind == 'regular_points':
-            base = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/regular_train_set.csv')
+            base = pd.read_csv('./dataset/regular_train_set.csv')
 
         else:
             raise ValueError('Invalid kind, use either "random_points" or "regular_points"')
@@ -153,7 +153,7 @@ class HaldaneSpinHalf:
 
     def generate_test_set(self):
 
-        test_points = pd.read_csv('~/4th_project_with_UCL/supervised learning/Second_hamiltonian/dataset/test_set.csv')
+        test_points = pd.read_csv('./dataset/test_set.csv')
         h1 = test_points['h1']
         h2 = test_points['h2']
 
