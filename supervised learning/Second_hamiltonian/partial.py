@@ -44,7 +44,7 @@ class partial:
                 pickle.dump(test, f)
             print(f"Test_set is generated in {time.time() - start_time:.2f} seconds.")
 
-        return train, test
+        
 
     def partial_density_matrix(self, keep=None):
         print("Computing partial density matrices started .....")
