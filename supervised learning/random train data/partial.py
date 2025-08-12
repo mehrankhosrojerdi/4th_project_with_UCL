@@ -82,7 +82,7 @@ class partial:
 
         return train, test
 
-    def partial_density_matrix(self, keep=None):
+    def partial_density_matrix_31(self, keep=None):
         print("Computing partial density matrices started .....")
         start_time = time.time()
 
@@ -90,6 +90,51 @@ class partial:
         path_leonardo = f"./dataset_L=51_bond=50_partial"
 
         file_path_train_DMRG = os.path.join(path_leonardo, f'train_set_DMRG_rand.pkl')
+        with open(file_path_train_DMRG, "rb") as f:
+            loaded_dataset = pickle.load(f)
+
+        file_path_test_DMRG = os.path.join(path_leonardo, f'test_set_DMRG.pkl')
+        with open(file_path_test_DMRG, "rb") as f:
+            loaded_test_set = pickle.load(f)
+        #loaded_test_set = self._load_dataset()[1]
+        Xte = loaded_test_set
+        d1 = len(Xte)
+
+        #loaded_dataset = self._load_dataset()[0]
+        Xtr = loaded_dataset[0]
+        d2 = len(Xtr)
+
+        print(f"Tracing over training set ({d2} items)...")
+        partial_rhos_train = Parallel(n_jobs=-1)(
+            delayed(lambda x: x.partial_trace_to_dense_canonical(where=keep))(Xtr[i])
+            for i in tqdm(range(d2), desc="Tracing train set"))
+        
+        '''file_path_partial_rhos_train = os.path.join(self.path(), 'partial_rhos_train.pkl')
+        with open(file_path_partial_rhos_train, "wb") as f:
+            pickle.dump(partial_rhos_train, f)'''
+
+        print(f"Tracing over test set ({d1} items)...")    
+        partial_rhos_test = Parallel(n_jobs=-1)(
+            delayed(lambda x: x.partial_trace_to_dense_canonical(where=keep))(Xte[i])
+            for i in tqdm(range(d1), desc="Tracing test set"))        
+        
+        '''file_path_partial_rhos_test = os.path.join(self.path(), 'partial_rhos_test.pkl')
+        with open(file_path_partial_rhos_test, "wb") as f:
+            pickle.dump(partial_rhos_test, f)'''
+
+        print(f"Partial density matrices computed in {time.time() - start_time:.2f} seconds.")
+
+        return partial_rhos_train, partial_rhos_test
+        
+
+    def partial_density_matrix_51(self, keep=None):
+        print("Computing partial density matrices started .....")
+        start_time = time.time()
+
+        path = self.path(keep=keep)
+        path_leonardo = f"./dataset_L=51_bond=50_partial"
+
+        file_path_train_DMRG = os.path.join(path_leonardo, f'train_set_51_rand.pkl')
         with open(file_path_train_DMRG, "rb") as f:
             loaded_dataset = pickle.load(f)
 

@@ -94,11 +94,11 @@ class dataset:
         xNeel.drop_duplicates(inplace=True)
         return xNeel
 
-    def scatter_points(self, r = 0.01):
+    def scatter_points(self, r = 0.1):
         '''
         This function is used to get the scatter points data include their 
         exact x and y coordinates and their corresponding labels which are 
-        0,1,2,3,4,5,6 for Haldane, Large_Ex, zNeel, Large_Ey, yNeel, Large_D 
+        6,0,2,1,3,5,4 for Haldane, Large_Ex, zNeel, Large_Ey, yNeel, Large_D 
         and xNeel respectively. Here by default r = 0.01 which represent the 
         line space between -2 to 2 with step size of 0.01 among x and y axis.
         users can change the value of r to get the desired step size.
@@ -122,14 +122,14 @@ class dataset:
         zone5 = polygon5.contains_points(points)  
         zone6 = polygon6.contains_points(points) 
 
-        labels = np.zeros(points.shape[0], dtype=int)
+        labels = np.full(points.shape[0], 6, dtype=int)
 
-        labels[zone1] = 1
+        labels[zone1] = 0
         labels[zone2] = 2
-        labels[zone3] = 3
-        labels[zone4] = 4
+        labels[zone3] = 1
+        labels[zone4] = 3
         labels[zone5] = 5
-        labels[zone6] = 6
+        labels[zone6] = 4
 
         labels = labels.reshape(X.shape)
 
